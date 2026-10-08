@@ -20,6 +20,7 @@ app.use('/api/classes', require('./routes/classRoutes'));
 app.use('/api/teacher', require('./routes/teacherRoutes'));
 app.use('/api/inquiries', require('./routes/inquiryRoutes'));
 app.use('/api/feedback', require('./routes/feedbackRoutes'));
+app.use('/api/blogs', require('./routes/blogRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.get('/', (req, res) => {
   res.send('Physics Class Website API is running...');
