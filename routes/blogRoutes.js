@@ -14,6 +14,20 @@ router.get('/public', async (req, res) => {
   }
 });
 
+// 1b. [READ - Public Single] තනි Blog post එකක් ලබාගැනීම
+// GET /api/blogs/public/:id
+router.get('/public/:id', async (req, res) => {
+  try {
+    const blog = await Blog.findById(req.params.id);
+    if (!blog || !blog.isActive) {
+      return res.status(404).json({ message: 'Blog post not found' });
+    }
+    res.json(blog);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching blog post', error: error.message });
+  }
+});
+
 // 2. [READ - Admin] සියලුම blog posts ලබාගැනීම
 // GET /api/blogs
 router.get('/', protectAdmin, async (req, res) => {
