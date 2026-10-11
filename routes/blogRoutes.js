@@ -8,6 +8,7 @@ const { protectAdmin } = require('../middleware/authMiddleware');
 // GET /api/blogs/public
 router.get('/public', async (req, res) => {
   try {
+    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     const cached = cache.get('blogs_public');
     if (cached) return res.json(cached);
 
@@ -23,6 +24,7 @@ router.get('/public', async (req, res) => {
 // GET /api/blogs/public/:id
 router.get('/public/:id', async (req, res) => {
   try {
+    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     const cacheKey = `blog_${req.params.id}`;
     const cached = cache.get(cacheKey);
     if (cached) return res.json(cached);

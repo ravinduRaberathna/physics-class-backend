@@ -8,6 +8,7 @@ const { protectAdmin } = require('../middleware/authMiddleware');
 // GET /api/teacher
 router.get('/', async (req, res) => {
   try {
+    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     const cached = cache.get('teacher_profile');
     if (cached) return res.json(cached);
 

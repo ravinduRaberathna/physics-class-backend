@@ -7,6 +7,7 @@ const { protectAdmin } = require('../middleware/authMiddleware');
 // 1. Public route - Active feedback පමණක් ලබාගැනීම (Cached)
 router.get('/public', async (req, res) => {
   try {
+    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     const cached = cache.get('feedback_public');
     if (cached) return res.json(cached);
 

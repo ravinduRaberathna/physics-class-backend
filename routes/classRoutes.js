@@ -8,6 +8,7 @@ const { protectAdmin } = require('../middleware/authMiddleware');
 // GET /api/classes
 router.get('/', async (req, res) => {
   try {
+    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     const cached = cache.get('classes_public');
     if (cached) return res.json(cached);
 
@@ -34,6 +35,7 @@ router.get('/admin/all', protectAdmin, async (req, res) => {
 // GET /api/classes/:id
 router.get('/:id', async (req, res) => {
   try {
+    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     const cacheKey = `class_${req.params.id}`;
     const cached = cache.get(cacheKey);
     if (cached) return res.json(cached);
