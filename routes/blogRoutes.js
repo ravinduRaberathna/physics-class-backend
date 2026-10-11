@@ -1,27 +1,37 @@
 const express = require('express');
 const router = express.Router();
 const Blog = require('../models/Blog');
+const cache = require('../utils/cache');
 const { protectAdmin } = require('../middleware/authMiddleware');
 
-// 1. [READ - Public] Active blog posts පමණක් ලබාගැනීම
+// 1. [READ - Public] Active blog posts පමණක් ලබාගැනීම (Cached)
 // GET /api/blogs/public
 router.get('/public', async (req, res) => {
   try {
+    const cached = cache.get('blogs_public');
+    if (cached) return res.json(cached);
+
     const blogs = await Blog.find({ isActive: true }).sort({ createdAt: -1 });
+    cache.set('blogs_public', blogs, 600);
     res.json(blogs);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching blogs', error: error.message });
   }
 });
 
-// 1b. [READ - Public Single] තනි Blog post එකක් ලබාගැනීම
+// 1b. [READ - Public Single] තනි Blog post එකක් ලබාගැනීම (Cached)
 // GET /api/blogs/public/:id
 router.get('/public/:id', async (req, res) => {
   try {
+    const cacheKey = `blog_${req.params.id}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
     const blog = await Blog.findById(req.params.id);
     if (!blog || !blog.isActive) {
       return res.status(404).json({ message: 'Blog post not found' });
     }
+    cache.set(cacheKey, blog, 600);
     res.json(blog);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching blog post', error: error.message });
@@ -45,6 +55,7 @@ router.post('/', protectAdmin, async (req, res) => {
   try {
     const newBlog = new Blog(req.body);
     const saved = await newBlog.save();
+    cache.clearPrefix('blog');
     res.status(201).json(saved);
   } catch (error) {
     res.status(400).json({ message: 'Error creating blog post', error: error.message });
@@ -62,6 +73,7 @@ router.put('/:id', protectAdmin, async (req, res) => {
     if (!updated) {
       return res.status(404).json({ message: 'Blog post not found' });
     }
+    cache.clearPrefix('blog');
     res.json(updated);
   } catch (error) {
     res.status(400).json({ message: 'Error updating blog post', error: error.message });
@@ -76,6 +88,7 @@ router.delete('/:id', protectAdmin, async (req, res) => {
     if (!deleted) {
       return res.status(404).json({ message: 'Blog post not found' });
     }
+    cache.clearPrefix('blog');
     res.json({ message: 'Blog post deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting blog post', error: error.message });

@@ -1,13 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const Class = require('../models/Class');
+const cache = require('../utils/cache');
 const { protectAdmin } = require('../middleware/authMiddleware');
 
-// [READ - Public] Active Classes පමණක් ලබා ගැනීම
+// [READ - Public] Active Classes පමණක් ලබා ගැනීම (High-performance cached)
 // GET /api/classes
 router.get('/', async (req, res) => {
   try {
+    const cached = cache.get('classes_public');
+    if (cached) return res.json(cached);
+
     const classes = await Class.find({ isActive: true }).sort({ batchYear: 1 });
+    cache.set('classes_public', classes, 600);
     res.json(classes);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -29,10 +34,15 @@ router.get('/admin/all', protectAdmin, async (req, res) => {
 // GET /api/classes/:id
 router.get('/:id', async (req, res) => {
   try {
+    const cacheKey = `class_${req.params.id}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return res.json(cached);
+
     const classItem = await Class.findById(req.params.id);
     if (!classItem) {
       return res.status(404).json({ message: 'Class not found' });
     }
+    cache.set(cacheKey, classItem, 600);
     res.json(classItem);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -45,6 +55,7 @@ router.post('/', protectAdmin, async (req, res) => {
   try {
     const newClass = new Class(req.body);
     const savedClass = await newClass.save();
+    cache.clearPrefix('class');
     res.status(201).json(savedClass);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -63,6 +74,7 @@ router.put('/:id', protectAdmin, async (req, res) => {
     if (!updatedClass) {
       return res.status(404).json({ message: 'Class not found' });
     }
+    cache.clearPrefix('class');
     res.json(updatedClass);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -77,6 +89,7 @@ router.delete('/:id', protectAdmin, async (req, res) => {
     if (!deletedClass) {
       return res.status(404).json({ message: 'Class not found' });
     }
+    cache.clearPrefix('class');
     res.json({ message: 'Class deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });

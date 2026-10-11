@@ -1,12 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const Feedback = require('../models/Feedback');
+const cache = require('../utils/cache');
 const { protectAdmin } = require('../middleware/authMiddleware');
 
-// 1. Public route - Active feedback පමණක් ලබාගැනීම (Auth අවශ්‍ය නැත)
+// 1. Public route - Active feedback පමණක් ලබාගැනීම (Cached)
 router.get('/public', async (req, res) => {
   try {
+    const cached = cache.get('feedback_public');
+    if (cached) return res.json(cached);
+
     const feedbacks = await Feedback.find({ isActive: true }).sort({ createdAt: -1 });
+    cache.set('feedback_public', feedbacks, 600);
     res.json(feedbacks);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching testimonials', error: error.message });
@@ -28,6 +33,7 @@ router.post('/', protectAdmin, async (req, res) => {
   try {
     const newFeedback = new Feedback(req.body);
     const saved = await newFeedback.save();
+    cache.clearPrefix('feedback');
     res.status(201).json(saved);
   } catch (error) {
     res.status(400).json({ message: 'Error creating feedback', error: error.message });
@@ -38,6 +44,7 @@ router.post('/', protectAdmin, async (req, res) => {
 router.put('/:id', protectAdmin, async (req, res) => {
   try {
     const updated = await Feedback.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    cache.clearPrefix('feedback');
     res.json(updated);
   } catch (error) {
     res.status(400).json({ message: 'Error updating feedback', error: error.message });
@@ -48,6 +55,7 @@ router.put('/:id', protectAdmin, async (req, res) => {
 router.delete('/:id', protectAdmin, async (req, res) => {
   try {
     await Feedback.findByIdAndDelete(req.params.id);
+    cache.clearPrefix('feedback');
     res.json({ message: 'Feedback deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting feedback', error: error.message });
