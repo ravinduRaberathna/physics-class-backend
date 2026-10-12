@@ -4,15 +4,10 @@ const Feedback = require('../models/Feedback');
 const cache = require('../utils/cache');
 const { protectAdmin } = require('../middleware/authMiddleware');
 
-// 1. Public route - Active feedback පමණක් ලබාගැනීම (Cached)
+// 1. Public route - Active feedback පමණක් ලබාගැනීම (Direct DB fetch - Realtime)
 router.get('/public', async (req, res) => {
   try {
-    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
-    const cached = cache.get('feedback_public');
-    if (cached) return res.json(cached);
-
     const feedbacks = await Feedback.find({ isActive: true }).sort({ createdAt: -1 });
-    cache.set('feedback_public', feedbacks, 600);
     res.json(feedbacks);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching testimonials', error: error.message });

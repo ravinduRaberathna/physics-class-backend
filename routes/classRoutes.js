@@ -4,16 +4,11 @@ const Class = require('../models/Class');
 const cache = require('../utils/cache');
 const { protectAdmin } = require('../middleware/authMiddleware');
 
-// [READ - Public] Active Classes පමණක් ලබා ගැනීම (High-performance cached)
+// [READ - Public] Active Classes පමණක් ලබා ගැනීම (Direct DB fetch - Realtime)
 // GET /api/classes
 router.get('/', async (req, res) => {
   try {
-    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
-    const cached = cache.get('classes_public');
-    if (cached) return res.json(cached);
-
     const classes = await Class.find({ isActive: true }).sort({ batchYear: 1 });
-    cache.set('classes_public', classes, 600);
     res.json(classes);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -35,16 +30,10 @@ router.get('/admin/all', protectAdmin, async (req, res) => {
 // GET /api/classes/:id
 router.get('/:id', async (req, res) => {
   try {
-    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
-    const cacheKey = `class_${req.params.id}`;
-    const cached = cache.get(cacheKey);
-    if (cached) return res.json(cached);
-
     const classItem = await Class.findById(req.params.id);
     if (!classItem) {
       return res.status(404).json({ message: 'Class not found' });
     }
-    cache.set(cacheKey, classItem, 600);
     res.json(classItem);
   } catch (error) {
     res.status(500).json({ message: error.message });

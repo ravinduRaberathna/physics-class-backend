@@ -7,11 +7,22 @@ dotenv.config();
 
 const app = express();
 
+app.set('etag', false);
+
 app.use(cors({
   origin: '*',
   credentials: true
 }));
 app.use(express.json());
+
+// Prevent stale HTTP caching across Vercel Edge & Client Browsers
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.set('Surrogate-Control', 'no-store');
+  next();
+});
 
 // 1. Health check & Root routes (Zero DB overhead - Instant 2ms response for Cron-Job / Pings)
 app.get('/api/health', (req, res) => {

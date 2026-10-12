@@ -4,36 +4,25 @@ const Blog = require('../models/Blog');
 const cache = require('../utils/cache');
 const { protectAdmin } = require('../middleware/authMiddleware');
 
-// 1. [READ - Public] Active blog posts පමණක් ලබාගැනීම (Cached)
+// 1. [READ - Public] Active blog posts පමණක් ලබාගැනීම (Direct DB fetch - Realtime)
 // GET /api/blogs/public
 router.get('/public', async (req, res) => {
   try {
-    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
-    const cached = cache.get('blogs_public');
-    if (cached) return res.json(cached);
-
     const blogs = await Blog.find({ isActive: true }).sort({ createdAt: -1 });
-    cache.set('blogs_public', blogs, 600);
     res.json(blogs);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching blogs', error: error.message });
   }
 });
 
-// 1b. [READ - Public Single] තනි Blog post එකක් ලබාගැනීම (Cached)
+// 1b. [READ - Public Single] තනි Blog post එකක් ලබාගැනීම (Direct DB fetch - Realtime)
 // GET /api/blogs/public/:id
 router.get('/public/:id', async (req, res) => {
   try {
-    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
-    const cacheKey = `blog_${req.params.id}`;
-    const cached = cache.get(cacheKey);
-    if (cached) return res.json(cached);
-
     const blog = await Blog.findById(req.params.id);
     if (!blog || !blog.isActive) {
       return res.status(404).json({ message: 'Blog post not found' });
     }
-    cache.set(cacheKey, blog, 600);
     res.json(blog);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching blog post', error: error.message });

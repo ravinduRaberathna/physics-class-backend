@@ -4,19 +4,14 @@ const Teacher = require('../models/Teacher');
 const cache = require('../utils/cache');
 const { protectAdmin } = require('../middleware/authMiddleware');
 
-// [READ - Public] සර්ගේ Profile එක බැලීම (Cached)
+// [READ - Public] සර්ගේ Profile එක බැලීම (Direct DB fetch - Realtime)
 // GET /api/teacher
 router.get('/', async (req, res) => {
   try {
-    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
-    const cached = cache.get('teacher_profile');
-    if (cached) return res.json(cached);
-
     const teacher = await Teacher.findOne();
     if (!teacher) {
       return res.status(404).json({ message: 'Teacher profile not found' });
     }
-    cache.set('teacher_profile', teacher, 600);
     res.json(teacher);
   } catch (error) {
     res.status(500).json({ message: error.message });
