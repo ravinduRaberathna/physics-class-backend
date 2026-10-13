@@ -10,7 +10,7 @@ const app = express();
 app.set('etag', false);
 
 app.use(cors({
-  origin: '*',
+  origin: true,
   credentials: true
 }));
 app.use(express.json());
